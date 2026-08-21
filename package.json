@@ -1,0 +1,17 @@
+{
+  "name": "najdi-boutique",
+  "private": true,
+  "version": "1.0.0",
+  "description": "متجر إلكتروني لبيع الفساتين الشعبية وقمصان الروز - بطابع نجدي",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB --r2=IMAGES --compatibility-date=2024-09-23",
+    "deploy": "wrangler pages deploy public --project-name=najdi-boutique",
+    "db:create": "wrangler d1 create najdi-boutique-db",
+    "db:migrate:local": "wrangler d1 execute najdi-boutique-db --local --file=./schema.sql",
+    "db:migrate:remote": "wrangler d1 execute najdi-boutique-db --remote --file=./schema.sql",
+    "r2:create": "wrangler r2 bucket create najdi-boutique-images"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

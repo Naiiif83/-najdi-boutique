@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>لوحة التحكم | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <div class="admin-topbar">
+      <h1>لوحة التحكم</h1>
+      <div style="display:flex;gap:10px">
+        <a href="/index.html" class="btn-secondary" style="width:auto;padding:10px 18px">👁️ عرض المتجر</a>
+        <button class="btn-secondary" style="width:auto;padding:10px 18px" id="logout-btn">تسجيل خروج</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button class="btn-primary" style="width:auto" data-tab="products">المنتجات</button>
+      <button class="btn-secondary" style="width:auto" data-tab="orders">الطلبات</button>
+      <a href="/admin/product-form.html" class="btn-secondary" style="width:auto;margin-right:auto;padding:10px 18px">+ منتج جديد</a>
+    </div>
+
+    <div id="products-tab"></div>
+    <div id="orders-tab" style="display:none"></div>
+  </div>
+
+  <script type="module">
+    import { guardAdmin, apiFetch } from "./js/admin.js";
+
+    const ok = await guardAdmin();
+    if (ok) init();
+
+    function init() {
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        await apiFetch("/api/admin/logout", { method: "POST" });
+        location.href = "/admin/login.html";
+      });
+
+      const tabButtons = document.querySelectorAll("[data-tab]");
+      tabButtons.forEach((btn) =>
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          document.getElementById("products-tab").style.display = tab === "products" ? "block" : "none";
+          document.getElementById("orders-tab").style.display = tab === "orders" ? "block" : "none";
+          tabButtons.forEach((b) => b.classList.toggle("btn-primary", b === btn));
+          tabButtons.forEach((b) => b.classList.toggle("btn-secondary", b !== btn));
+          if (tab === "orders") loadOrders();
+        })
+      );
+
+      loadProducts();
+    }
+
+    async function loadProducts() {
+      const mount = document.getElementById("products-tab");
+      mount.innerHTML = "<p>...جاري التحميل</p>";
+      const { products } = await apiFetch("/api/products?includeInactive=1");
+      if (!products.length) {
+        mount.innerHTML = `<div class="empty-state">لا يوجد منتجات بعد، ابدئي بإضافة أول منتج 🌸</div>`;
+        return;
+      }
+      mount.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th></th><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>المخزون</th><th>360؟</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            ${products
+              .map(
+                (p) => `
+              <tr>
+                <td><img src="${p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg"}" /></td>
+                <td>${p.name}</td>
+                <td>${p.category}</td>
+                <td>${p.priceSar.toFixed(0)} ر.س</td>
+                <td>${p.stock}</td>
+                <td>${p.frames360?.length >= 3 ? `✅ (${p.frames360.length})` : "—"}</td>
+                <td><span class="pill ${p.isActive ? "pill-paid" : "pill-cancelled"}">${p.isActive ? "منشور" : "مخفي"}</span></td>
+                <td>
+                  <a href="/admin/product-form.html?id=${p.id}">تعديل</a>
+                  &nbsp;·&nbsp;
+                  <button data-delete="${p.id}" style="background:none;border:none;color:#a33">حذف</button>
+                </td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+      mount.querySelectorAll("[data-delete]").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          if (!confirm("متأكدة من حذف هذا المنتج؟")) return;
+          await apiFetch(`/api/products/${btn.dataset.delete}`, { method: "DELETE" });
+          loadProducts();
+        })
+      );
+    }
+
+    async function loadOrders() {
+      const mount = document.getElementById("orders-tab");
+      mount.innerHTML = "<p>...جاري التحميل</p>";
+      const { orders } = await apiFetch("/api/orders");
+      if (!orders.length) {
+        mount.innerHTML = `<div class="empty-state">لا توجد طلبات بعد</div>`;
+        return;
+      }
+      const pillClass = { pending: "pill-pending", paid: "pill-paid", failed: "pill-failed", cancelled: "pill-cancelled" };
+      mount.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>رقم الطلب</th><th>العميلة</th><th>الجوال</th><th>المدينة</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <tbody>
+            ${orders
+              .map(
+                (o) => `
+              <tr>
+                <td>${o.id}</td>
+                <td>${o.customerName}</td>
+                <td>${o.phone}</td>
+                <td>${o.city}</td>
+                <td>${o.totalSar.toFixed(0)} ر.س</td>
+                <td><span class="pill ${pillClass[o.status] || ""}">${arStatus(o.status)}</span></td>
+                <td>${o.createdAt}</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function arStatus(s) {
+      return { pending: "بانتظار الدفع", paid: "مدفوع", failed: "فشل الدفع", cancelled: "ملغي" }[s] || s;
+    }
+  </script>
+</body>
+</html>

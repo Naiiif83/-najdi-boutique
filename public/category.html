@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تسوّقي حسب التصنيف | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <section class="section" style="padding-top:36px">
+    <h2 class="section-title" id="cat-title">التصنيف</h2>
+    <p class="section-sub" id="cat-count"></p>
+    <div class="product-grid" id="product-grid"></div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import "./js/layout.js";
+    import { categoryLabel } from "./js/layout.js";
+
+    const params = new URLSearchParams(location.search);
+    const cat = params.get("cat") || "";
+    document.getElementById("cat-title").textContent = cat ? categoryLabel(cat) : "كل المنتجات";
+
+    fetch(`/api/products${cat ? `?category=${encodeURIComponent(cat)}` : ""}`)
+      .then((r) => r.json())
+      .then(({ products }) => {
+        document.getElementById("cat-count").textContent = `${products.length} منتج`;
+        const grid = document.getElementById("product-grid");
+        if (!products.length) {
+          grid.innerHTML = `<div class="empty-state">لا توجد منتجات في هذا التصنيف حالياً</div>`;
+          return;
+        }
+        grid.innerHTML = products.map(productCard).join("");
+      });
+
+    function productCard(p) {
+      const img = p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg";
+      const has360 = p.frames360 && p.frames360.length >= 3;
+      return `
+        <a class="product-card" href="/product.html?id=${p.id}">
+          <div class="thumb">
+            <img src="${img}" alt="${p.name}" loading="lazy" />
+            ${has360 ? `<span class="badge-360">🔄 360°</span>` : ""}
+          </div>
+          <div class="info">
+            <h3>${p.name}</h3>
+            <div class="price-row">
+              <span class="price">${p.priceSar.toFixed(0)} ر.س</span>
+              ${p.compareAtPrice ? `<span class="price-old">${p.compareAtPrice.toFixed(0)} ر.س</span>` : ""}
+            </div>
+          </div>
+        </a>`;
+    }
+  </script>
+</body>
+</html>

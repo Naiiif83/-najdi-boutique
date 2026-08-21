@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تم استلام طلبك | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-wrap" id="content" style="text-align:center">
+    <p>...جاري التحقق من طلبك</p>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import "./js/layout.js";
+
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get("order");
+    const content = document.getElementById("content");
+
+    if (!orderId) {
+      content.innerHTML = `<div class="empty-state">لم يتم تحديد رقم الطلب</div>`;
+    } else {
+      fetch(`/api/orders/${orderId}`)
+        .then((r) => r.json())
+        .then(({ order }) => {
+          if (!order || order.status !== "paid") {
+            content.innerHTML = `<div class="alert alert-error">لم يتم تأكيد الدفع لهذا الطلب بعد</div>`;
+            return;
+          }
+          content.innerHTML = `
+            <div class="alert alert-success" style="font-size:16px">🎉 تم استلام طلبك بنجاح، شكراً لتسوّقك معنا!</div>
+            <div class="cart-summary" style="text-align:right">
+              <div class="summary-row"><span>رقم الطلب</span><span>${order.id}</span></div>
+              <div class="summary-row"><span>الاسم</span><span>${order.customerName}</span></div>
+              <div class="summary-row"><span>الجوال</span><span>${order.phone}</span></div>
+              <div class="summary-row"><span>عنوان التوصيل</span><span>${order.city} — ${order.address}</span></div>
+              <div class="summary-row total"><span>الإجمالي المدفوع</span><span>${order.totalSar.toFixed(0)} ر.س</span></div>
+            </div>
+            <a href="/index.html" class="hero-cta" style="margin-top:24px;display:inline-block">متابعة التسوّق</a>
+          `;
+        });
+    }
+  </script>
+</body>
+</html>

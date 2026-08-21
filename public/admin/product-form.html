@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إضافة / تعديل منتج | لوحة التحكم</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="admin-shell">
+    <div class="admin-topbar">
+      <h1 id="form-title">منتج جديد</h1>
+      <a href="/admin/index.html" class="btn-secondary" style="width:auto;padding:10px 18px">← رجوع للوحة التحكم</a>
+    </div>
+
+    <div id="alert-mount"></div>
+
+    <div class="form-grid">
+      <label class="form-field">اسم المنتج
+        <input type="text" id="f-name" required />
+      </label>
+      <label class="form-field">التصنيف
+        <select id="f-category"></select>
+      </label>
+      <label class="form-field">السعر (ر.س)
+        <input type="number" id="f-price" min="0" step="0.01" required />
+      </label>
+      <label class="form-field">السعر قبل الخصم (اختياري)
+        <input type="number" id="f-compare" min="0" step="0.01" />
+      </label>
+      <label class="form-field">المخزون (الكمية المتوفرة)
+        <input type="number" id="f-stock" min="0" step="1" value="0" />
+      </label>
+      <label class="form-field">المقاسات (افصلي بينها بفاصلة، مثال: S,M,L أو 2-4 سنوات,5-7 سنوات)
+        <input type="text" id="f-sizes" />
+      </label>
+      <label class="form-field">الوصف
+        <textarea id="f-description" rows="4"></textarea>
+      </label>
+      <label class="form-field">
+        <span style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="f-active" checked style="width:auto" /> منشور وظاهر في المتجر
+        </span>
+      </label>
+    </div>
+
+    <div style="margin-top:26px">
+      <span class="field-label">صور عادية للمنتج (تظهر كصورة أساسية وفي معرض بسيط)</span>
+      <div class="image-picker" id="images-picker"></div>
+      <input type="file" id="images-input" accept="image/*" multiple hidden />
+      <button class="upload-btn" id="images-upload-btn" style="margin-top:8px">📷 رفع صور</button>
+    </div>
+
+    <div style="margin-top:26px">
+      <span class="field-label">صور الدوران 360° — ارفعي الصور بالترتيب بدءاً من الأمام ودورة كاملة (12–24 صورة مثالياً، وبحد أدنى 3 صور)</span>
+      <div class="image-picker" id="frames-picker"></div>
+      <input type="file" id="frames-input" accept="image/*" multiple hidden />
+      <button class="upload-btn" id="frames-upload-btn" style="margin-top:8px">🔄 رفع صور الدوران (بالترتيب)</button>
+      <p class="stock-note">ملاحظة: الصور تُرفع وتُضاف بنفس ترتيب اختيارك للملفات. لو غلطتِ بالترتيب احذفي الكل وأعيدي الرفع.</p>
+    </div>
+
+    <button class="btn-primary" id="save-btn" style="margin-top:30px">💾 حفظ المنتج</button>
+  </div>
+
+  <script type="module">
+    import { guardAdmin, apiFetch, CATEGORY_OPTIONS } from "./js/admin.js";
+
+    const ok = await guardAdmin();
+    if (ok) init();
+
+    const params = new URLSearchParams(location.search);
+    const productId = params.get("id");
+
+    let images = [];
+    let frames360 = [];
+
+    async function init() {
+      document.getElementById("f-category").innerHTML = CATEGORY_OPTIONS.map((c) => `<option value="${c.slug}">${c.name}</option>`).join("");
+
+      if (productId) {
+        document.getElementById("form-title").textContent = "تعديل منتج";
+        const { product } = await apiFetch(`/api/products/${productId}`);
+        fillForm(product);
+      }
+
+      document.getElementById("images-upload-btn").addEventListener("click", () => document.getElementById("images-input").click());
+      document.getElementById("frames-upload-btn").addEventListener("click", () => document.getElementById("frames-input").click());
+      document.getElementById("images-input").addEventListener("change", (e) => handleUpload(e, images, renderImages));
+      document.getElementById("frames-input").addEventListener("change", (e) => handleUpload(e, frames360, renderFrames));
+      document.getElementById("save-btn").addEventListener("click", save);
+    }
+
+    function fillForm(p) {
+      document.getElementById("f-name").value = p.name;
+      document.getElementById("f-category").value = p.category;
+      document.getElementById("f-price").value = p.priceSar;
+      document.getElementById("f-compare").value = p.compareAtPrice ?? "";
+      document.getElementById("f-stock").value = p.stock;
+      document.getElementById("f-sizes").value = (p.sizes || []).join(",");
+      document.getElementById("f-description").value = p.description || "";
+      document.getElementById("f-active").checked = p.isActive;
+      images = [...(p.images || [])];
+      frames360 = [...(p.frames360 || [])];
+      renderImages();
+      renderFrames();
+    }
+
+    async function handleUpload(e, arr, renderFn) {
+      const files = [...e.target.files];
+      e.target.value = "";
+      for (const file of files) {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: form });
+        const data = await res.json();
+        if (res.ok) {
+          arr.push(data.url);
+          renderFn();
+        } else {
+          showAlert(data.error || "تعذر رفع الصورة");
+        }
+      }
+    }
+
+    function renderImages() {
+      renderPicker("images-picker", images, (i) => {
+        images.splice(i, 1);
+        renderImages();
+      });
+    }
+    function renderFrames() {
+      renderPicker("frames-picker", frames360, (i) => {
+        frames360.splice(i, 1);
+        renderFrames();
+      });
+    }
+    function renderPicker(mountId, arr, onDelete) {
+      const mount = document.getElementById(mountId);
+      mount.innerHTML = arr
+        .map(
+          (url, i) => `
+        <div class="thumb-item">
+          <img src="${url}" />
+          <button class="del" data-i="${i}">×</button>
+        </div>`
+        )
+        .join("");
+      mount.querySelectorAll(".del").forEach((btn) => btn.addEventListener("click", () => onDelete(Number(btn.dataset.i))));
+    }
+
+    async function save() {
+      const name = document.getElementById("f-name").value.trim();
+      const priceSar = Number(document.getElementById("f-price").value);
+      if (!name || !priceSar) {
+        showAlert("الرجاء تعبئة اسم المنتج والسعر على الأقل");
+        return;
+      }
+
+      const payload = {
+        name,
+        category: document.getElementById("f-category").value,
+        priceSar,
+        compareAtPrice: document.getElementById("f-compare").value ? Number(document.getElementById("f-compare").value) : null,
+        stock: Number(document.getElementById("f-stock").value) || 0,
+        sizes: document
+          .getElementById("f-sizes")
+          .value.split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        description: document.getElementById("f-description").value,
+        isActive: document.getElementById("f-active").checked,
+        images,
+        frames360,
+      };
+
+      try {
+        if (productId) {
+          await apiFetch(`/api/products/${productId}`, { method: "PUT", body: JSON.stringify(payload) });
+        } else {
+          await apiFetch("/api/products", { method: "POST", body: JSON.stringify(payload) });
+        }
+        location.href = "/admin/index.html";
+      } catch (err) {
+        showAlert(err.message);
+      }
+    }
+
+    function showAlert(msg) {
+      document.getElementById("alert-mount").innerHTML = `<div class="alert alert-error">${msg}</div>`;
+    }
+  </script>
+</body>
+</html>

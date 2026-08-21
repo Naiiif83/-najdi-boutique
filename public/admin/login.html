@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>دخول لوحة التحكم | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="login-box">
+    <h1 class="page-title" style="text-align:center">لوحة تحكم المتجر</h1>
+    <div id="alert-mount"></div>
+    <div class="form-field" style="margin-bottom:16px;text-align:right">
+      <label>كلمة المرور</label>
+      <input type="password" id="password" autofocus />
+    </div>
+    <button class="btn-primary" id="login-btn">دخول</button>
+  </div>
+
+  <script type="module">
+    document.getElementById("login-btn").addEventListener("click", submit);
+    document.getElementById("password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    });
+
+    async function submit() {
+      const password = document.getElementById("password").value;
+      const alertMount = document.getElementById("alert-mount");
+      try {
+        const res = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "تعذر تسجيل الدخول");
+        location.href = "/admin/index.html";
+      } catch (err) {
+        alertMount.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

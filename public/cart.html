@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>سلة التسوّق | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-wrap">
+    <h1 class="page-title">سلة التسوّق</h1>
+    <div id="cart-items"></div>
+    <div id="cart-summary"></div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import "./js/layout.js";
+    import { getCart, updateQty, removeFromCart, cartTotal } from "./js/cart.js";
+
+    render();
+
+    function render() {
+      const items = getCart();
+      const itemsMount = document.getElementById("cart-items");
+      const summaryMount = document.getElementById("cart-summary");
+
+      if (!items.length) {
+        itemsMount.innerHTML = `<div class="empty-state">السلة فارغة حالياً 🌸<br/><br/><a class="hero-cta" href="/index.html">تصفّحي المنتجات</a></div>`;
+        summaryMount.innerHTML = "";
+        return;
+      }
+
+      itemsMount.innerHTML = items
+        .map(
+          (i, idx) => `
+        <div class="cart-item">
+          <img src="${i.image}" alt="${i.name}" />
+          <div>
+            <div class="name">${i.name}</div>
+            <div class="meta">${i.size ? `المقاس: ${i.size} · ` : ""}${i.price.toFixed(0)} ر.س</div>
+            <button class="remove" data-remove="${idx}">إزالة</button>
+          </div>
+          <div class="qty-row" style="margin:0">
+            <button data-minus="${idx}">−</button>
+            <span>${i.qty}</span>
+            <button data-plus="${idx}">+</button>
+          </div>
+        </div>`
+        )
+        .join("");
+
+      const total = cartTotal();
+      summaryMount.innerHTML = `
+        <div class="cart-summary">
+          <div class="summary-row"><span>عدد القطع</span><span>${items.reduce((s, i) => s + i.qty, 0)}</span></div>
+          <div class="summary-row total"><span>الإجمالي</span><span>${total.toFixed(0)} ر.س</span></div>
+          <a href="/checkout.html" class="btn-primary" style="display:block;text-align:center;margin-top:16px;text-decoration:none">إتمام الطلب</a>
+        </div>`;
+
+      itemsMount.querySelectorAll("[data-remove]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          const i = items[Number(btn.dataset.remove)];
+          removeFromCart(i.productId, i.size);
+          render();
+        })
+      );
+      itemsMount.querySelectorAll("[data-plus]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          const i = items[Number(btn.dataset.plus)];
+          updateQty(i.productId, i.size, i.qty + 1);
+          render();
+        })
+      );
+      itemsMount.querySelectorAll("[data-minus]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          const i = items[Number(btn.dataset.minus)];
+          updateQty(i.productId, i.size, i.qty - 1);
+          render();
+        })
+      );
+    }
+  </script>
+</body>
+</html>

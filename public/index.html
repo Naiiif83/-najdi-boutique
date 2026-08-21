@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>بسطة الوالدة | فساتين شعبية وقمصان الروز</title>
+  <meta name="description" content="متجر فساتين شعبية للأطفال والشابات وكبار السن، وقمصان الروز — شاهدي المنتج بتقنية دوران 360 درجة قبل الشراء." />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>بسطة الوالدة</h1>
+      <p>بضاعة شعبية أصيلة من قلب السوق &mdash; فساتين تراثية لكل الأعمار، وقمصان الروز البيتية. شاهدي كل قطعة من كل الزوايا بتقنية الدوران 360° قبل ما تطلبين.</p>
+      <a href="#categories" class="hero-cta">تسوّقي الآن</a>
+    </div>
+  </section>
+
+  <section class="section" id="categories">
+    <h2 class="section-title">تسوّقي حسب التصنيف</h2>
+    <p class="section-sub">كل الأذواق والأعمار موجودة عندنا</p>
+    <div class="category-grid" id="category-grid"></div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">وصل حديثاً</h2>
+    <p class="section-sub">أحدث القطع المضافة للمتجر</p>
+    <div class="product-grid" id="latest-grid"></div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import "./js/layout.js";
+    import { CATEGORIES } from "./js/layout.js";
+
+    const grid = document.getElementById("category-grid");
+    grid.innerHTML = CATEGORIES.map(
+      (c) => `
+      <a class="category-card" href="/category.html?cat=${c.slug}">
+        <div class="cat-icon">${c.icon}</div>
+        <div class="cat-body">
+          <h3>${c.name}</h3>
+          <p>${c.desc}</p>
+        </div>
+      </a>`
+    ).join("");
+
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then(({ products }) => {
+        const latest = products.slice(0, 8);
+        const latestGrid = document.getElementById("latest-grid");
+        if (!latest.length) {
+          latestGrid.innerHTML = `<div class="empty-state">ماراح تلاقين منتجات بعد، تقدرين تضيفين من لوحة التحكم 🌸</div>`;
+          return;
+        }
+        latestGrid.innerHTML = latest.map(productCard).join("");
+      });
+
+    function productCard(p) {
+      const img = p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg";
+      const has360 = p.frames360 && p.frames360.length >= 3;
+      return `
+        <a class="product-card" href="/product.html?id=${p.id}">
+          <div class="thumb">
+            <img src="${img}" alt="${p.name}" loading="lazy" />
+            ${has360 ? `<span class="badge-360">🔄 360°</span>` : ""}
+          </div>
+          <div class="info">
+            <h3>${p.name}</h3>
+            <div class="price-row">
+              <span class="price">${p.priceSar.toFixed(0)} ر.س</span>
+              ${p.compareAtPrice ? `<span class="price-old">${p.compareAtPrice.toFixed(0)} ر.س</span>` : ""}
+            </div>
+          </div>
+        </a>`;
+    }
+  </script>
+</body>
+</html>

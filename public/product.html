@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تفاصيل المنتج | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="product-page" id="product-page">
+    <div class="viewer-wrap">
+      <div id="viewer-mount"></div>
+    </div>
+    <div class="product-detail" id="detail-mount">
+      <p>...جاري التحميل</p>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script type="module">
+    import "./js/layout.js";
+    import { mountViewer360 } from "./js/viewer360.js";
+    import { addToCart } from "./js/cart.js";
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const detailMount = document.getElementById("detail-mount");
+
+    if (!id) {
+      detailMount.innerHTML = `<div class="empty-state">لم يتم تحديد منتج</div>`;
+    } else {
+      fetch(`/api/products/${id}`)
+        .then((r) => {
+          if (!r.ok) throw new Error("not found");
+          return r.json();
+        })
+        .then(({ product }) => renderProduct(product))
+        .catch(() => {
+          detailMount.innerHTML = `<div class="empty-state">لم يتم العثور على المنتج</div>`;
+        });
+    }
+
+    function renderProduct(p) {
+      document.title = `${p.name} | بسطة الوالدة`;
+
+      mountViewer360({
+        mountEl: document.getElementById("viewer-mount"),
+        frames: p.frames360,
+        fallbackImages: p.images,
+        productName: p.name,
+      });
+
+      let selectedSize = p.sizes?.[0] || null;
+      let qty = 1;
+
+      detailMount.innerHTML = `
+        <h1>${p.name}</h1>
+        <div class="price-row">
+          <span class="price">${p.priceSar.toFixed(0)} ر.س</span>
+          ${p.compareAtPrice ? `<span class="price-old">${p.compareAtPrice.toFixed(0)} ر.س</span>` : ""}
+        </div>
+        <p class="desc">${p.description ? p.description.replace(/\n/g, "<br/>") : "قطعة شعبية أصيلة من بسطة الوالدة."}</p>
+
+        ${
+          p.sizes?.length
+            ? `<span class="field-label">المقاس</span>
+               <div class="size-options" id="size-options">
+                 ${p.sizes.map((s) => `<button data-size="${s}" class="${s === selectedSize ? "selected" : ""}">${s}</button>`).join("")}
+               </div>`
+            : ""
+        }
+
+        <span class="field-label">الكمية</span>
+        <div class="qty-row">
+          <button id="qty-minus">−</button>
+          <span id="qty-value">1</span>
+          <button id="qty-plus">+</button>
+        </div>
+
+        <button class="btn-primary" id="add-to-cart-btn" ${p.stock <= 0 ? "disabled" : ""}>
+          ${p.stock <= 0 ? "نفدت الكمية" : "🛍️ أضيفي للسلة"}
+        </button>
+        <p class="stock-note">${p.stock > 0 ? `متوفر (${p.stock} قطعة)` : "نعتذر، هذه القطعة غير متوفرة حالياً"}</p>
+      `;
+
+      const sizeOptions = document.getElementById("size-options");
+      if (sizeOptions) {
+        sizeOptions.addEventListener("click", (e) => {
+          const btn = e.target.closest("button");
+          if (!btn) return;
+          selectedSize = btn.dataset.size;
+          [...sizeOptions.children].forEach((b) => b.classList.toggle("selected", b === btn));
+        });
+      }
+
+      document.getElementById("qty-minus").addEventListener("click", () => {
+        qty = Math.max(1, qty - 1);
+        document.getElementById("qty-value").textContent = qty;
+      });
+      document.getElementById("qty-plus").addEventListener("click", () => {
+        qty = Math.min(p.stock || 99, qty + 1);
+        document.getElementById("qty-value").textContent = qty;
+      });
+
+      const addBtn = document.getElementById("add-to-cart-btn");
+      addBtn?.addEventListener("click", () => {
+        addToCart({
+          productId: p.id,
+          name: p.name,
+          price: p.priceSar,
+          size: selectedSize,
+          qty,
+          image: p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg",
+        });
+        addBtn.textContent = "✅ أضيفت للسلة";
+        setTimeout(() => (addBtn.textContent = "🛍️ أضيفي للسلة"), 1500);
+      });
+    }
+  </script>
+</body>
+</html>

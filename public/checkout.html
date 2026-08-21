@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إتمام الطلب | بسطة الوالدة</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdn.moyasar.com/mysr/0.2.1/moyasar.css" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-wrap">
+    <h1 class="page-title">إتمام الطلب</h1>
+    <div id="alert-mount"></div>
+
+    <div id="checkout-form-wrap">
+      <div class="form-grid" id="checkout-form">
+        <label class="form-field">الاسم الكامل
+          <input type="text" id="f-name" required />
+        </label>
+        <label class="form-field">رقم الجوال
+          <input type="tel" id="f-phone" placeholder="05xxxxxxxx" required />
+        </label>
+        <label class="form-field">المدينة
+          <input type="text" id="f-city" required />
+        </label>
+        <label class="form-field">الحي / تفاصيل إضافية
+          <input type="text" id="f-notes" />
+        </label>
+        <label class="form-field">العنوان بالتفصيل
+          <textarea id="f-address" rows="2" required></textarea>
+        </label>
+      </div>
+
+      <div class="cart-summary" id="order-summary" style="margin-top:20px"></div>
+
+      <div style="margin-top:20px">
+        <div id="mysr-form"></div>
+        <button class="btn-primary" id="submit-btn" style="margin-top:12px">تأكيد بيانات التوصيل والمتابعة للدفع</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.moyasar.com/mysr/0.2.1/moyasar.js"></script>
+  <script type="module">
+    import "./js/layout.js";
+    import { getCart, cartTotal, clearCart } from "./js/cart.js";
+
+    const items = getCart();
+    const total = cartTotal();
+    const alertMount = document.getElementById("alert-mount");
+    const params = new URLSearchParams(location.search);
+
+    const errorMessages = {
+      missing: "حدث خطأ أثناء الدفع، الرجاء المحاولة مرة أخرى",
+      order_not_found: "لم يتم العثور على الطلب",
+      payment_not_configured: "الدفع الإلكتروني غير مفعّل بعد، الرجاء التواصل معنا عبر واتساب",
+      verify_failed: "تعذّر التحقق من الدفع، الرجاء المحاولة مرة أخرى",
+      payment_failed: "لم تكتمل عملية الدفع، الرجاء المحاولة مرة أخرى",
+    };
+    if (params.get("error")) {
+      alertMount.innerHTML = `<div class="alert alert-error">${errorMessages[params.get("error")] || "حدث خطأ غير متوقع"}</div>`;
+    }
+
+    if (!items.length) {
+      document.getElementById("checkout-form-wrap").innerHTML = `<div class="empty-state">السلة فارغة، لا يوجد ما يمكن إتمامه 🌸</div>`;
+    } else {
+      document.getElementById("order-summary").innerHTML = `
+        <div class="summary-row"><span>عدد القطع</span><span>${items.reduce((s, i) => s + i.qty, 0)}</span></div>
+        <div class="summary-row total"><span>الإجمالي المطلوب دفعه</span><span>${total.toFixed(0)} ر.س</span></div>
+      `;
+
+      document.getElementById("submit-btn").addEventListener("click", onSubmit);
+    }
+
+    async function onSubmit() {
+      const name = document.getElementById("f-name").value.trim();
+      const phone = document.getElementById("f-phone").value.trim();
+      const city = document.getElementById("f-city").value.trim();
+      const address = document.getElementById("f-address").value.trim();
+      const notes = document.getElementById("f-notes").value.trim();
+
+      if (!name || !phone || !city || !address) {
+        alertMount.innerHTML = `<div class="alert alert-error">الرجاء تعبئة كل بيانات التوصيل</div>`;
+        return;
+      }
+
+      const submitBtn = document.getElementById("submit-btn");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "...جاري إنشاء الطلب";
+
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerName: name,
+            phone,
+            city,
+            address,
+            notes,
+            items: items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, size: i.size, qty: i.qty, image: i.image })),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "تعذر إنشاء الطلب");
+
+        const cfg = window.__NAJDI_CONFIG__ || {};
+        if (!cfg.moyasarPublishableKey) {
+          alertMount.innerHTML = `<div class="alert alert-error">الدفع الإلكتروني غير مفعّل بعد، الرجاء التواصل معنا عبر واتساب لإتمام الطلب رقم ${data.id}</div>`;
+          submitBtn.style.display = "none";
+          return;
+        }
+
+        submitBtn.style.display = "none";
+        document.getElementById("checkout-form").querySelectorAll("input, textarea").forEach((el) => (el.disabled = true));
+
+        Moyasar.init({
+          element: "#mysr-form",
+          amount: Math.round(data.totalSar * 100),
+          currency: "SAR",
+          description: `طلب رقم ${data.id}`,
+          publishable_api_key: cfg.moyasarPublishableKey,
+          callback_url: `${location.origin}/api/checkout/verify?order_id=${data.id}`,
+          methods: ["creditcard", "applepay", "stcpay"],
+          on_completed: () => clearCart(),
+        });
+      } catch (err) {
+        alertMount.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = "تأكيد بيانات التوصيل والمتابعة للدفع";
+      }
+    }
+  </script>
+</body>
+</html>
