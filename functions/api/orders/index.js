@@ -29,7 +29,33 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: "السلة فارغة" }, { status: 400 });
   }
 
-  const total = body.items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
+  // الأسعار والأسماء تُقرأ من قاعدة البيانات مباشرة (لا يُعتمد على القيم القادمة من المتصفح)
+  // لمنع التلاعب بالسعر عبر تعديل الطلب المرسل من العميل.
+  const items = [];
+  for (const raw of body.items) {
+    const qty = Math.floor(Number(raw?.qty));
+    if (!raw?.productId || !Number.isFinite(qty) || qty < 1 || qty > 50) {
+      return jsonResponse({ error: "بيانات السلة غير صحيحة" }, { status: 400 });
+    }
+    const product = await env.DB.prepare("SELECT id, name, price_sar, images, frames_360, is_active FROM products WHERE id = ?")
+      .bind(raw.productId)
+      .first();
+    if (!product || !product.is_active) {
+      return jsonResponse({ error: `أحد المنتجات في السلة لم يعد متوفراً` }, { status: 400 });
+    }
+    const images = JSON.parse(product.images || "[]");
+    const frames = JSON.parse(product.frames_360 || "[]");
+    items.push({
+      productId: product.id,
+      name: product.name,
+      price: product.price_sar,
+      size: typeof raw.size === "string" ? raw.size.slice(0, 60) : null,
+      qty,
+      image: images[0] || frames[0] || null,
+    });
+  }
+
+  const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   if (!(total > 0)) {
     return jsonResponse({ error: "قيمة الطلب غير صحيحة" }, { status: 400 });
   }
@@ -39,7 +65,16 @@ export async function onRequestPost(context) {
     `INSERT INTO orders (id, customer_name, phone, city, address, notes, items, total_sar, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
   )
-    .bind(id, body.customerName, body.phone, body.city, body.address, body.notes ?? "", JSON.stringify(body.items), total)
+    .bind(
+      id,
+      String(body.customerName).slice(0, 200),
+      String(body.phone).slice(0, 40),
+      String(body.city).slice(0, 120),
+      String(body.address).slice(0, 500),
+      body.notes ? String(body.notes).slice(0, 500) : "",
+      JSON.stringify(items),
+      total
+    )
     .run();
 
   return jsonResponse({ id, totalSar: total }, { status: 201 });

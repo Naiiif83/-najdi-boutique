@@ -28,6 +28,7 @@
 
   <script type="module">
     import { guardAdmin, apiFetch } from "./js/admin.js";
+    import { escapeHtml } from "../js/util.js";
 
     const ok = await guardAdmin();
     if (ok) init();
@@ -69,9 +70,9 @@
               .map(
                 (p) => `
               <tr>
-                <td><img src="${p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg"}" /></td>
-                <td>${p.name}</td>
-                <td>${p.category}</td>
+                <td><img src="${escapeHtml(p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg")}" /></td>
+                <td>${escapeHtml(p.name)}</td>
+                <td>${escapeHtml(p.category)}</td>
                 <td>${p.priceSar.toFixed(0)} ر.س</td>
                 <td>${p.stock}</td>
                 <td>${p.frames360?.length >= 3 ? `✅ (${p.frames360.length})` : "—"}</td>
@@ -113,13 +114,13 @@
               .map(
                 (o) => `
               <tr>
-                <td>${o.id}</td>
-                <td>${o.customerName}</td>
-                <td>${o.phone}</td>
-                <td>${o.city}</td>
+                <td>${escapeHtml(o.id)}</td>
+                <td>${escapeHtml(o.customerName)}</td>
+                <td>${escapeHtml(o.phone)}</td>
+                <td>${escapeHtml(o.city)}</td>
                 <td>${o.totalSar.toFixed(0)} ر.س</td>
-                <td><span class="pill ${pillClass[o.status] || ""}">${arStatus(o.status)}</span></td>
-                <td>${o.createdAt}</td>
+                <td><span class="pill ${pillClass[o.status] || ""}">${escapeHtml(arStatus(o.status))}</span></td>
+                <td>${escapeHtml(o.createdAt)}</td>
               </tr>`
               )
               .join("")}

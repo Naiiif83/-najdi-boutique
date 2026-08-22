@@ -17,6 +17,7 @@
 
   <script type="module">
     import "./js/layout.js";
+    import { escapeHtml } from "./js/util.js";
 
     const params = new URLSearchParams(location.search);
     const orderId = params.get("order");
@@ -35,10 +36,10 @@
           content.innerHTML = `
             <div class="alert alert-success" style="font-size:16px">🎉 تم استلام طلبك بنجاح، شكراً لتسوّقك معنا!</div>
             <div class="cart-summary" style="text-align:right">
-              <div class="summary-row"><span>رقم الطلب</span><span>${order.id}</span></div>
-              <div class="summary-row"><span>الاسم</span><span>${order.customerName}</span></div>
-              <div class="summary-row"><span>الجوال</span><span>${order.phone}</span></div>
-              <div class="summary-row"><span>عنوان التوصيل</span><span>${order.city} — ${order.address}</span></div>
+              <div class="summary-row"><span>رقم الطلب</span><span>${escapeHtml(order.id)}</span></div>
+              <div class="summary-row"><span>الاسم</span><span>${escapeHtml(order.customerName)}</span></div>
+              <div class="summary-row"><span>الجوال</span><span>${escapeHtml(order.phone)}</span></div>
+              <div class="summary-row"><span>عنوان التوصيل</span><span>${escapeHtml(order.city)} — ${escapeHtml(order.address)}</span></div>
               <div class="summary-row total"><span>الإجمالي المدفوع</span><span>${order.totalSar.toFixed(0)} ر.س</span></div>
             </div>
             <a href="/index.html" class="hero-cta" style="margin-top:24px;display:inline-block">متابعة التسوّق</a>

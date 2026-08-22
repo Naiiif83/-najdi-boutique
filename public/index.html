@@ -35,6 +35,7 @@
   <script type="module">
     import "./js/layout.js";
     import { CATEGORIES } from "./js/layout.js";
+    import { escapeHtml } from "./js/util.js";
 
     const grid = document.getElementById("category-grid");
     grid.innerHTML = CATEGORIES.map(
@@ -64,13 +65,13 @@
       const img = p.images?.[0] || p.frames360?.[0] || "/img/placeholder.svg";
       const has360 = p.frames360 && p.frames360.length >= 3;
       return `
-        <a class="product-card" href="/product.html?id=${p.id}">
+        <a class="product-card" href="/product.html?id=${encodeURIComponent(p.id)}">
           <div class="thumb">
-            <img src="${img}" alt="${p.name}" loading="lazy" />
+            <img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" />
             ${has360 ? `<span class="badge-360">🔄 360°</span>` : ""}
           </div>
           <div class="info">
-            <h3>${p.name}</h3>
+            <h3>${escapeHtml(p.name)}</h3>
             <div class="price-row">
               <span class="price">${p.priceSar.toFixed(0)} ر.س</span>
               ${p.compareAtPrice ? `<span class="price-old">${p.compareAtPrice.toFixed(0)} ر.س</span>` : ""}

@@ -24,6 +24,7 @@
     import "./js/layout.js";
     import { mountViewer360 } from "./js/viewer360.js";
     import { addToCart } from "./js/cart.js";
+    import { escapeHtml } from "./js/util.js";
 
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
@@ -57,18 +58,18 @@
       let qty = 1;
 
       detailMount.innerHTML = `
-        <h1>${p.name}</h1>
+        <h1>${escapeHtml(p.name)}</h1>
         <div class="price-row">
           <span class="price">${p.priceSar.toFixed(0)} ر.س</span>
           ${p.compareAtPrice ? `<span class="price-old">${p.compareAtPrice.toFixed(0)} ر.س</span>` : ""}
         </div>
-        <p class="desc">${p.description ? p.description.replace(/\n/g, "<br/>") : "قطعة شعبية أصيلة من بسطة الوالدة."}</p>
+        <p class="desc">${p.description ? escapeHtml(p.description).replace(/\n/g, "<br/>") : "قطعة شعبية أصيلة من بسطة الوالدة."}</p>
 
         ${
           p.sizes?.length
             ? `<span class="field-label">المقاس</span>
                <div class="size-options" id="size-options">
-                 ${p.sizes.map((s) => `<button data-size="${s}" class="${s === selectedSize ? "selected" : ""}">${s}</button>`).join("")}
+                 ${p.sizes.map((s) => `<button data-size="${escapeHtml(s)}" class="${s === selectedSize ? "selected" : ""}">${escapeHtml(s)}</button>`).join("")}
                </div>`
             : ""
         }

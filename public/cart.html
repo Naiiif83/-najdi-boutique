@@ -20,6 +20,7 @@
   <script type="module">
     import "./js/layout.js";
     import { getCart, updateQty, removeFromCart, cartTotal } from "./js/cart.js";
+    import { escapeHtml } from "./js/util.js";
 
     render();
 
@@ -38,10 +39,10 @@
         .map(
           (i, idx) => `
         <div class="cart-item">
-          <img src="${i.image}" alt="${i.name}" />
+          <img src="${escapeHtml(i.image)}" alt="${escapeHtml(i.name)}" />
           <div>
-            <div class="name">${i.name}</div>
-            <div class="meta">${i.size ? `المقاس: ${i.size} · ` : ""}${i.price.toFixed(0)} ر.س</div>
+            <div class="name">${escapeHtml(i.name)}</div>
+            <div class="meta">${i.size ? `المقاس: ${escapeHtml(i.size)} · ` : ""}${i.price.toFixed(0)} ر.س</div>
             <button class="remove" data-remove="${idx}">إزالة</button>
           </div>
           <div class="qty-row" style="margin:0">
