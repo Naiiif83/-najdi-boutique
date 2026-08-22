@@ -33,6 +33,11 @@
         </label>
       </div>
 
+      <div style="margin-top:14px">
+        <button type="button" class="btn-secondary" id="share-location-btn" style="width:auto;padding:12px 20px">📍 شاركي موقعك على الخريطة (يسهّل التوصيل)</button>
+        <p class="stock-note" id="location-status"></p>
+      </div>
+
       <div class="cart-summary" id="order-summary" style="margin-top:20px"></div>
 
       <div style="margin-top:20px">
@@ -57,6 +62,27 @@
     const total = cartTotal();
     const alertMount = document.getElementById("alert-mount");
     const params = new URLSearchParams(location.search);
+    let locationUrl = null;
+
+    document.getElementById("share-location-btn")?.addEventListener("click", () => {
+      const statusEl = document.getElementById("location-status");
+      if (!navigator.geolocation) {
+        statusEl.textContent = "المتصفح ما يدعم مشاركة الموقع";
+        return;
+      }
+      statusEl.textContent = "...جاري تحديد موقعك";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          statusEl.textContent = "✅ تم إرفاق موقعك، شكراً لك";
+        },
+        () => {
+          statusEl.textContent = "تعذّر الوصول للموقع، تأكدي من السماح بالوصول للموقع من إعدادات المتصفح";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
 
     const errorMessages = {
       missing: "حدث خطأ أثناء الدفع، الرجاء المحاولة مرة أخرى",
@@ -105,6 +131,7 @@
             phone,
             city,
             address,
+            locationUrl,
             notes,
             items: items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, size: i.size, qty: i.qty, image: i.image })),
           }),

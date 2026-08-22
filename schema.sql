@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS orders (
   phone TEXT NOT NULL,
   city TEXT NOT NULL,
   address TEXT NOT NULL,
+  location_url TEXT,                -- رابط موقع التوصيل على خرائط قوقل (اختياري)
   notes TEXT,
   items TEXT NOT NULL,              -- JSON: [{productId,name,price,size,qty,image}]
   total_sar REAL NOT NULL,

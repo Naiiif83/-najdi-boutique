@@ -40,6 +40,7 @@
               <div class="summary-row"><span>الاسم</span><span>${escapeHtml(order.customerName)}</span></div>
               <div class="summary-row"><span>الجوال</span><span>${escapeHtml(order.phone)}</span></div>
               <div class="summary-row"><span>عنوان التوصيل</span><span>${escapeHtml(order.city)} — ${escapeHtml(order.address)}</span></div>
+              ${order.locationUrl ? `<div class="summary-row"><span>موقع التوصيل</span><span><a href="${escapeHtml(order.locationUrl)}" target="_blank" style="color:var(--maroon);font-weight:700">📍 عرض على الخريطة</a></span></div>` : ""}
               <div class="summary-row total"><span>الإجمالي المدفوع</span><span>${order.totalSar.toFixed(0)} ر.س</span></div>
             </div>
             <a href="/index.html" class="hero-cta" style="margin-top:24px;display:inline-block">متابعة التسوّق</a>

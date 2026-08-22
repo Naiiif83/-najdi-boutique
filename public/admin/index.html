@@ -108,7 +108,7 @@
       const pillClass = { pending: "pill-pending", paid: "pill-paid", failed: "pill-failed", cancelled: "pill-cancelled" };
       mount.innerHTML = `
         <table class="admin-table">
-          <thead><tr><th>رقم الطلب</th><th>العميلة</th><th>الجوال</th><th>المدينة</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <thead><tr><th>رقم الطلب</th><th>العميلة</th><th>الجوال</th><th>المدينة</th><th>الموقع</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th></tr></thead>
           <tbody>
             ${orders
               .map(
@@ -118,6 +118,7 @@
                 <td>${escapeHtml(o.customerName)}</td>
                 <td>${escapeHtml(o.phone)}</td>
                 <td>${escapeHtml(o.city)}</td>
+                <td>${o.locationUrl ? `<a href="${escapeHtml(o.locationUrl)}" target="_blank">📍 خريطة</a>` : "—"}</td>
                 <td>${o.totalSar.toFixed(0)} ر.س</td>
                 <td><span class="pill ${pillClass[o.status] || ""}">${escapeHtml(arStatus(o.status))}</span></td>
                 <td>${escapeHtml(o.createdAt)}</td>

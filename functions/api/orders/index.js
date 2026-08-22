@@ -8,6 +8,7 @@ function rowToOrder(row) {
     phone: row.phone,
     city: row.city,
     address: row.address,
+    locationUrl: row.location_url,
     notes: row.notes,
     items: JSON.parse(row.items || "[]"),
     totalSar: row.total_sar,
@@ -60,10 +61,15 @@ export async function onRequestPost(context) {
     return jsonResponse({ error: "قيمة الطلب غير صحيحة" }, { status: 400 });
   }
 
+  let locationUrl = null;
+  if (typeof body.locationUrl === "string" && /^https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com|goo\.gl\/maps)/.test(body.locationUrl)) {
+    locationUrl = body.locationUrl.slice(0, 300);
+  }
+
   const id = newId("order");
   await env.DB.prepare(
-    `INSERT INTO orders (id, customer_name, phone, city, address, notes, items, total_sar, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+    `INSERT INTO orders (id, customer_name, phone, city, address, location_url, notes, items, total_sar, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
   )
     .bind(
       id,
@@ -71,6 +77,7 @@ export async function onRequestPost(context) {
       String(body.phone).slice(0, 40),
       String(body.city).slice(0, 120),
       String(body.address).slice(0, 500),
+      locationUrl,
       body.notes ? String(body.notes).slice(0, 500) : "",
       JSON.stringify(items),
       total

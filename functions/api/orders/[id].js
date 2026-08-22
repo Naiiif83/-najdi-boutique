@@ -7,6 +7,7 @@ function rowToOrder(row) {
     phone: row.phone,
     city: row.city,
     address: row.address,
+    locationUrl: row.location_url,
     items: JSON.parse(row.items || "[]"),
     totalSar: row.total_sar,
     status: row.status,
