@@ -40,6 +40,7 @@ const FOOTER_HTML = `
       <h4>تواصلي معنا</h4>
       <p>واتساب: <a href="https://wa.me/966500000000" target="_blank" rel="noopener">اضغطي هنا للتواصل</a></p>
       <p>الدفع آمن عبر مدى وفيزا وماستركارد وآبل باي</p>
+      <p>💵 الدفع عند الاستلام متاح</p>
       <p><a href="/returns-policy.html">سياسة الاستبدال والاسترجاع</a></p>
     </div>
   </div>
