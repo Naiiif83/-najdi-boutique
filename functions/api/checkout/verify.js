@@ -39,11 +39,23 @@ export async function onRequestGet(context) {
   const amountMatches = Math.abs(paidAmountSar - order.total_sar) < 0.01;
 
   if (isPaid && amountMatches) {
-    await env.DB.prepare(
-      "UPDATE orders SET status='paid', moyasar_payment_id=?, updated_at=datetime('now') WHERE id=?"
-    )
-      .bind(paymentId, orderId)
-      .run();
+    // نتجنب خصم المخزون مرتين لو تكررت زيارة نفس رابط التأكيد على طلب مدفوع مسبقاً
+    if (order.status !== "paid") {
+      await env.DB.prepare(
+        "UPDATE orders SET status='paid', moyasar_payment_id=?, updated_at=datetime('now') WHERE id=?"
+      )
+        .bind(paymentId, orderId)
+        .run();
+
+      const items = JSON.parse(order.items || "[]");
+      for (const item of items) {
+        await env.DB.prepare(
+          "UPDATE products SET stock = MAX(stock - ?, 0), updated_at=datetime('now') WHERE id = ?"
+        )
+          .bind(item.qty, item.productId)
+          .run();
+      }
+    }
     return redirect(`/order-confirmation.html?order=${orderId}`);
   }
 
