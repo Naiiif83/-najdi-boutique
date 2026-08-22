@@ -7,18 +7,17 @@ binding = "DB"
 database_name = "najdi-boutique-db"
 database_id = "34d884db-df5c-4964-9f3e-a5efe509c462"
 
-# تخزين الصور (الصور العادية + صور الدوران 360)
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "najdi-boutique-images"
-
 # متغيرات بيئية عامة (غير سرية) - يمكن ضبطها أيضاً من لوحة Cloudflare Pages
 [vars]
 STORE_NAME = "بسطة الوالدة"
 MOYASAR_PUBLISHABLE_KEY = "pk_test_REPLACE_ME"
+GITHUB_OWNER = "Naiiif83"
+GITHUB_REPO = "-najdi-boutique"
+GITHUB_BRANCH = "main"
 
-# المتغيرات السرية التالية لا تُكتب هنا، بل تُضاف من لوحة تحكم Cloudflare Pages
-# (Settings -> Environment variables -> Encrypt):
+# المتغيرات السرية التالية لا تُكتب هنا، بل تُضاف من الترمنال بأمر:
+#   npx wrangler pages secret put NAME --project-name=najdi-boutique
 #   ADMIN_PASSWORD          كلمة مرور دخول لوحة التحكم
 #   ADMIN_SESSION_SECRET    نص عشوائي طويل لتوقيع جلسة الدخول
-#   MOYASAR_SECRET_KEY      المفتاح السري من حساب Moyasar للتحقق من الدفع
+#   GITHUB_TOKEN            توكن GitHub (صلاحية Contents: Read & Write) لرفع صور المنتجات
+#   MOYASAR_SECRET_KEY      المفتاح السري من حساب Moyasar للتحقق من الدفع (اختياري بالبداية)
