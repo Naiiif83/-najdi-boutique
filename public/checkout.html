@@ -41,6 +41,14 @@
       <div class="cart-summary" id="order-summary" style="margin-top:20px"></div>
 
       <div style="margin-top:20px">
+        <span class="field-label">طريقة الدفع</span>
+        <div class="size-options" id="payment-method-options">
+          <button type="button" data-method="online" class="selected">💳 دفع إلكتروني (مدى / فيزا / آبل باي)</button>
+          <button type="button" data-method="cod">💵 الدفع عند الاستلام</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
         <div id="mysr-form"></div>
         <button class="btn-primary" id="submit-btn" style="margin-top:12px">تأكيد بيانات التوصيل والمتابعة للدفع</button>
         <p class="stock-note" style="text-align:center">
@@ -63,6 +71,15 @@
     const alertMount = document.getElementById("alert-mount");
     const params = new URLSearchParams(location.search);
     let locationUrl = null;
+    let paymentMethod = "online";
+
+    const paymentOptions = document.getElementById("payment-method-options");
+    paymentOptions?.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-method]");
+      if (!btn) return;
+      paymentMethod = btn.dataset.method;
+      [...paymentOptions.children].forEach((b) => b.classList.toggle("selected", b === btn));
+    });
 
     document.getElementById("share-location-btn")?.addEventListener("click", () => {
       const statusEl = document.getElementById("location-status");
@@ -133,20 +150,30 @@
             address,
             locationUrl,
             notes,
+            paymentMethod,
             items: items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, size: i.size, qty: i.qty, image: i.image })),
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "تعذر إنشاء الطلب");
 
+        // الدفع عند الاستلام: الطلب مؤكد فوراً، بدون خطوة دفع إلكتروني
+        if (paymentMethod === "cod") {
+          clearCart();
+          location.href = `/order-confirmation.html?order=${data.id}`;
+          return;
+        }
+
         const cfg = window.__NAJDI_CONFIG__ || {};
         if (!cfg.moyasarPublishableKey) {
-          alertMount.innerHTML = `<div class="alert alert-error">الدفع الإلكتروني غير مفعّل بعد، الرجاء التواصل معنا عبر واتساب لإتمام الطلب رقم ${data.id}</div>`;
-          submitBtn.style.display = "none";
+          alertMount.innerHTML = `<div class="alert alert-error">الدفع الإلكتروني غير مفعّل بعد، الرجاء التواصل معنا عبر واتساب لإتمام الطلب رقم ${data.id}، أو اختاري "الدفع عند الاستلام" بالأعلى</div>`;
+          submitBtn.disabled = false;
+          submitBtn.textContent = "تأكيد بيانات التوصيل والمتابعة للدفع";
           return;
         }
 
         submitBtn.style.display = "none";
+        paymentOptions?.querySelectorAll("button").forEach((b) => (b.disabled = true));
         document.getElementById("checkout-form").querySelectorAll("input, textarea").forEach((el) => (el.disabled = true));
 
         Moyasar.init({

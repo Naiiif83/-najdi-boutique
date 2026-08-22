@@ -29,19 +29,23 @@
       fetch(`/api/orders/${orderId}`)
         .then((r) => r.json())
         .then(({ order }) => {
-          if (!order || order.status !== "paid") {
+          if (!order || (order.status !== "paid" && order.status !== "cod")) {
             content.innerHTML = `<div class="alert alert-error">لم يتم تأكيد الدفع لهذا الطلب بعد</div>`;
             return;
           }
+          const isCod = order.status === "cod";
           content.innerHTML = `
-            <div class="alert alert-success" style="font-size:16px">🎉 تم استلام طلبك بنجاح، شكراً لتسوّقك معنا!</div>
+            <div class="alert alert-success" style="font-size:16px">
+              ${isCod ? "🎉 تم تأكيد طلبك، الدفع سيكون عند الاستلام. شكراً لتسوّقك معنا!" : "🎉 تم استلام طلبك بنجاح، شكراً لتسوّقك معنا!"}
+            </div>
             <div class="cart-summary" style="text-align:right">
               <div class="summary-row"><span>رقم الطلب</span><span>${escapeHtml(order.id)}</span></div>
               <div class="summary-row"><span>الاسم</span><span>${escapeHtml(order.customerName)}</span></div>
               <div class="summary-row"><span>الجوال</span><span>${escapeHtml(order.phone)}</span></div>
               <div class="summary-row"><span>عنوان التوصيل</span><span>${escapeHtml(order.city)} — ${escapeHtml(order.address)}</span></div>
               ${order.locationUrl ? `<div class="summary-row"><span>موقع التوصيل</span><span><a href="${escapeHtml(order.locationUrl)}" target="_blank" style="color:var(--maroon);font-weight:700">📍 عرض على الخريطة</a></span></div>` : ""}
-              <div class="summary-row total"><span>الإجمالي المدفوع</span><span>${order.totalSar.toFixed(0)} ر.س</span></div>
+              <div class="summary-row"><span>طريقة الدفع</span><span>${isCod ? "الدفع عند الاستلام" : "دفع إلكتروني"}</span></div>
+              <div class="summary-row total"><span>${isCod ? "الإجمالي المطلوب دفعه عند الاستلام" : "الإجمالي المدفوع"}</span><span>${order.totalSar.toFixed(0)} ر.س</span></div>
             </div>
             <a href="/index.html" class="hero-cta" style="margin-top:24px;display:inline-block">متابعة التسوّق</a>
           `;

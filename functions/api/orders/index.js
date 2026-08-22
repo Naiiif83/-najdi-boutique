@@ -12,6 +12,7 @@ function rowToOrder(row) {
     notes: row.notes,
     items: JSON.parse(row.items || "[]"),
     totalSar: row.total_sar,
+    paymentMethod: row.payment_method,
     status: row.status,
     moyasarPaymentId: row.moyasar_payment_id,
     createdAt: row.created_at,
@@ -66,10 +67,13 @@ export async function onRequestPost(context) {
     locationUrl = body.locationUrl.slice(0, 300);
   }
 
+  const paymentMethod = body.paymentMethod === "cod" ? "cod" : "online";
+  const status = paymentMethod === "cod" ? "cod" : "pending";
+
   const id = newId("order");
   await env.DB.prepare(
-    `INSERT INTO orders (id, customer_name, phone, city, address, location_url, notes, items, total_sar, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
+    `INSERT INTO orders (id, customer_name, phone, city, address, location_url, notes, items, total_sar, payment_method, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       id,
@@ -80,11 +84,22 @@ export async function onRequestPost(context) {
       locationUrl,
       body.notes ? String(body.notes).slice(0, 500) : "",
       JSON.stringify(items),
-      total
+      total,
+      paymentMethod,
+      status
     )
     .run();
 
-  return jsonResponse({ id, totalSar: total }, { status: 201 });
+  // طلبات الدفع عند الاستلام مؤكدة فوراً (بدون خطوة دفع إلكتروني)، فنخصم المخزون مباشرة
+  if (paymentMethod === "cod") {
+    for (const item of items) {
+      await env.DB.prepare("UPDATE products SET stock = MAX(stock - ?, 0), updated_at=datetime('now') WHERE id = ?")
+        .bind(item.qty, item.productId)
+        .run();
+    }
+  }
+
+  return jsonResponse({ id, totalSar: total, paymentMethod }, { status: 201 });
 }
 
 // GET /api/orders — لوحة التحكم فقط

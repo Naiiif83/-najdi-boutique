@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS orders (
   notes TEXT,
   items TEXT NOT NULL,              -- JSON: [{productId,name,price,size,qty,image}]
   total_sar REAL NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending', -- pending | paid | failed | cancelled
+  payment_method TEXT NOT NULL DEFAULT 'online', -- online | cod (الدفع عند الاستلام)
+  status TEXT NOT NULL DEFAULT 'pending', -- pending | paid | cod | failed | cancelled
   moyasar_payment_id TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

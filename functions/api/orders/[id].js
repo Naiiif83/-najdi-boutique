@@ -10,6 +10,7 @@ function rowToOrder(row) {
     locationUrl: row.location_url,
     items: JSON.parse(row.items || "[]"),
     totalSar: row.total_sar,
+    paymentMethod: row.payment_method,
     status: row.status,
     createdAt: row.created_at,
   };

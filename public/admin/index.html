@@ -105,7 +105,7 @@
         mount.innerHTML = `<div class="empty-state">لا توجد طلبات بعد</div>`;
         return;
       }
-      const pillClass = { pending: "pill-pending", paid: "pill-paid", failed: "pill-failed", cancelled: "pill-cancelled" };
+      const pillClass = { pending: "pill-pending", paid: "pill-paid", cod: "pill-paid", failed: "pill-failed", cancelled: "pill-cancelled" };
       mount.innerHTML = `
         <table class="admin-table">
           <thead><tr><th>رقم الطلب</th><th>العميلة</th><th>الجوال</th><th>المدينة</th><th>الموقع</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th></tr></thead>
@@ -131,7 +131,7 @@
     }
 
     function arStatus(s) {
-      return { pending: "بانتظار الدفع", paid: "مدفوع", failed: "فشل الدفع", cancelled: "ملغي" }[s] || s;
+      return { pending: "بانتظار الدفع", paid: "مدفوع", cod: "دفع عند الاستلام", failed: "فشل الدفع", cancelled: "ملغي" }[s] || s;
     }
   </script>
 </body>
