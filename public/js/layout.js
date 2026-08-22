@@ -39,7 +39,7 @@ const FOOTER_HTML = `
     <div>
       <h4>تواصلي معنا</h4>
       <p>واتساب: <a href="https://wa.me/966500000000" target="_blank" rel="noopener">اضغطي هنا للتواصل</a></p>
-      <p>الدفع آمن عبر مدى وابل وابل واببل باي</p>
+      <p>الدفع آمن عبر مدى وفيزا وماستركارد وآبل باي</p>
     </div>
   </div>
   <div class="footer-bottom">© <span data-year></span> جميع الحقوق محفوظة</div>
